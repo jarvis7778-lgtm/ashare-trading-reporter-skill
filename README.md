@@ -20,8 +20,9 @@ OpenClaw Skill：用于 **A 股（中国股市）盘中两次报告 + 0-token �
 
 ### 下载
 
-去 Releases 下载 `.skill`：
-- v0.1.0：https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.0
+去 Releases 下载 `.skill`（推荐用 Latest）：
+- Latest：https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/latest
+- 当前最新（v0.1.2）：https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.2
 
 需要的文件：
 - `ashare-trading-reporter.skill`
@@ -108,8 +109,9 @@ Features:
 
 ### Download
 
-Download the `.skill` file from Releases:
-- v0.1.0: https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.0
+Download the `.skill` file from Releases (recommended: Latest):
+- Latest: https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/latest
+- Current latest (v0.1.2): https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.2
 
 File you want:
 - `ashare-trading-reporter.skill`
