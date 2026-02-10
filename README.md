@@ -72,9 +72,15 @@ Discord 投递硬规则：
   >/dev/null 2>&1
 ```
 
-触发条件不应写死：
-- 建议先用 **TradingView/tvscreener** 做多日分析，生成 `data/ashare/config/<symbol>.json`（阻力/支撑、破位线、是否启用 VWAP cross）。
-- 脚本按 config 执行；每个条件每日只提醒一次（本地 state 去重）。
+触发条件不应写死（涨了/跌了过几天就该更新一次）：
+
+- **新手推荐（自动生成）**：每天开盘前自动生成一次 config（不需要懂术语）
+  - 规则很简单：
+    - 上方提醒：取“接近的整数关口” + “近 N 天高点”
+    - 下方提醒：取“近 M 天低点”（默认 M=5，避免把止损线设太远）
+- 你也可以用 **TradingView/tvscreener** 辅助生成更个性化的关键价位，然后写进同一个 config 文件。
+
+脚本按 config 执行；每个条件每日只提醒一次（本地 state 去重）。
 
 每个条件每日只提醒一次（本地 state 去重）。
 
@@ -154,9 +160,15 @@ Example (Telegram):
   >/dev/null 2>&1
 ```
 
-Triggers should not be hard-coded:
-- Use **TradingView/tvscreener** multi-day analysis to generate `data/ashare/config/<symbol>.json` (resistance/support levels, breakdown level, whether VWAP cross is useful).
-- The polling script reads the config; each trigger fires at most once per trading day (de-dup via a local state file).
+Triggers should not be hard-coded (price changes over days/weeks):
+
+- **Beginner-friendly (auto-generate)**: regenerate a config before market open.
+  - Simple rules:
+    - Upside alerts: nearest round-number level + recent N-day high
+    - Downside alert: recent M-day low (default M=5 so it’s not too far away)
+- Optionally use **TradingView/tvscreener** to propose more tailored levels and write them into the same config file.
+
+The polling script reads the config; each trigger fires at most once per trading day (de-dup via a local state file).
 
 ### Roadmap / ideas
 
