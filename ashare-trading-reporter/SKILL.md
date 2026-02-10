@@ -19,7 +19,7 @@ Use the bundled scripts in `scripts/` to:
 
 - Stock symbol (Sina format): e.g. `sh600158` / `sz000001`
 - Watch levels: e.g. `9.5/10.1/9.0/8.5`
-- Intraday alert triggers (defaults): touch `10.00`, touch `10.03`, break below `9.86`, VWAP cross
+- Intraday alert triggers: **configurable per symbol** (generated once, then used by the 0-token alert script)
 - Delivery targets:
   - Reports → Discord thread: `channel:<id>`
   - Alerts → Telegram chatId (or Discord if requested)
@@ -29,14 +29,14 @@ Use the bundled scripts in `scripts/` to:
 Midday:
 
 ```bash
-cd /home/lyy/.openclaw/workspace
+cd "$OPENCLAW_WORKSPACE"   # or your OpenClaw workspace
 python3 scripts/a_share_intraday_report.py --symbol sh600158 --mode mid --date YYYY-MM-DD
 ```
 
 Close:
 
 ```bash
-cd /home/lyy/.openclaw/workspace
+cd "$OPENCLAW_WORKSPACE"   # or your OpenClaw workspace
 python3 scripts/a_share_intraday_report.py --symbol sh600158 --mode close --date YYYY-MM-DD
 ```
 
@@ -47,7 +47,7 @@ Notes:
 ## Optional: call auction snapshot (best-effort)
 
 ```bash
-cd /home/lyy/.openclaw/workspace
+cd "$OPENCLAW_WORKSPACE"   # or your OpenClaw workspace
 python3 scripts/a_share_auction_snapshot.py --symbol sh600158
 ```
 
@@ -68,14 +68,38 @@ Suggested schedules (Asia/Shanghai):
 
 Use the script `scripts/a_share_price_alerts.py`.
 
+### Step 1) Generate per-symbol trigger config (once)
+
+To avoid hard-coded triggers, generate a per-symbol config **once per stock** (or whenever you want to update it). Suggested approach:
+- Use **tvscreener / TradingView** multi-day analysis to propose:
+  - key resistance/support levels (recent swing high/low)
+  - a downside breakdown level
+  - whether VWAP cross alerts are useful for this symbol
+
+Save the result as a JSON file, for example:
+
+`data/ashare/config/sh600158.json`
+
+Schema:
+```json
+{
+  "levels_up": [10.0, 10.03],
+  "breakdown": 9.86,
+  "vwap_cross": true
+}
+```
+
+### Step 2) Run the 0-token alert loop
+
 Example (Telegram alerts):
 
-```bash
-* * * * 1-5 cd /home/lyy/.openclaw/workspace && /usr/bin/python3 scripts/a_share_price_alerts.py \
+```cron
+* * * * 1-5 cd "$OPENCLAW_WORKSPACE" && /usr/bin/python3 scripts/a_share_price_alerts.py \
   --symbol sh600158 \
+  --config data/ashare/config/sh600158.json \
   --channel telegram \
   --target <telegramChatId> \
-  --state-dir /home/lyy/.openclaw/workspace/data/ashare/alerts \
+  --state-dir "$OPENCLAW_WORKSPACE/data/ashare/alerts" \
   >/dev/null 2>&1
 ```
 

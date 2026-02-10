@@ -63,19 +63,18 @@ Discord 投递硬规则：
 示例（Telegram）：
 
 ```cron
-* * * * 1-5 cd /home/lyy/.openclaw/workspace && /usr/bin/python3 scripts/a_share_price_alerts.py \
+* * * * 1-5 cd "$OPENCLAW_WORKSPACE" && /usr/bin/python3 scripts/a_share_price_alerts.py \
   --symbol sh600158 \
+  --config data/ashare/config/sh600158.json \
   --channel telegram \
   --target <telegramChatId> \
-  --state-dir /home/lyy/.openclaw/workspace/data/ashare/alerts \
+  --state-dir "$OPENCLAW_WORKSPACE/data/ashare/alerts" \
   >/dev/null 2>&1
 ```
 
-脚本默认触发条件：
-- 触达/突破 10.00
-- 触达/突破 10.03
-- 跌破 9.86
-- 上穿/下穿 VWAP
+触发条件不应写死：
+- 建议先用 **TradingView/tvscreener** 做多日分析，生成 `data/ashare/config/<symbol>.json`（阻力/支撑、破位线、是否启用 VWAP cross）。
+- 脚本按 config 执行；每个条件每日只提醒一次（本地 state 去重）。
 
 每个条件每日只提醒一次（本地 state 去重）。
 
@@ -146,21 +145,18 @@ Recommended: system **crontab** runs the polling script every minute, but it sen
 Example (Telegram):
 
 ```cron
-* * * * 1-5 cd /home/lyy/.openclaw/workspace && /usr/bin/python3 scripts/a_share_price_alerts.py \
+* * * * 1-5 cd "$OPENCLAW_WORKSPACE" && /usr/bin/python3 scripts/a_share_price_alerts.py \
   --symbol sh600158 \
+  --config data/ashare/config/sh600158.json \
   --channel telegram \
   --target <telegramChatId> \
-  --state-dir /home/lyy/.openclaw/workspace/data/ashare/alerts \
+  --state-dir "$OPENCLAW_WORKSPACE/data/ashare/alerts" \
   >/dev/null 2>&1
 ```
 
-Default triggers:
-- touch/above 10.00
-- touch/above 10.03
-- break below 9.86
-- VWAP cross
-
-Each trigger fires at most once per trading day (de-dup via a local state file).
+Triggers should not be hard-coded:
+- Use **TradingView/tvscreener** multi-day analysis to generate `data/ashare/config/<symbol>.json` (resistance/support levels, breakdown level, whether VWAP cross is useful).
+- The polling script reads the config; each trigger fires at most once per trading day (de-dup via a local state file).
 
 ### Roadmap / ideas
 

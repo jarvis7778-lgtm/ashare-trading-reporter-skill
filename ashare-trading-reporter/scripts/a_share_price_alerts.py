@@ -176,14 +176,22 @@ def main() -> None:
     ap.add_argument("--symbol", required=True, help="Sina symbol, e.g. sh600158")
     ap.add_argument("--channel", default="telegram", help="Message channel: telegram|discord")
     ap.add_argument("--target", required=True, help="Recipient: Telegram <chatId> or Discord channel:<id>")
-    ap.add_argument("--levels", default="10.00,10.03", help="Comma levels for upside touch")
-    ap.add_argument("--breakdown", default="9.86", help="Break below level")
+    ap.add_argument("--config", default="", help="Optional JSON config file with per-symbol triggers")
+    ap.add_argument("--levels", default="10.00,10.03", help="Comma levels for upside touch (used if --config not set)")
+    ap.add_argument("--breakdown", default="9.86", help="Break below level (used if --config not set)")
     ap.add_argument("--state-dir", default="data/ashare/alerts", help="Directory to store state")
     args = ap.parse_args()
 
     now = datetime.now()
     if not is_trading_time(now):
         return
+
+    cfg = {}
+    if args.config:
+        try:
+            cfg = json.loads(Path(args.config).read_text(encoding='utf-8'))
+        except Exception:
+            cfg = {}
 
     q = fetch_sina_quote(args.symbol)
     day = q.date  # YYYY-MM-DD
@@ -218,9 +226,19 @@ def main() -> None:
         save_state(state_path, state)
         send_message(args.channel, args.target, text)
 
-    # Upside touches
+    # Resolve triggers (config overrides CLI defaults)
+    # Config schema example:
+    # {
+    #   "levels_up": [10.0, 10.03],
+    #   "breakdown": 9.86,
+    #   "vwap_cross": true
+    # }
     try:
-        levels = [float(x.strip()) for x in args.levels.split(',') if x.strip()]
+        levels = cfg.get('levels_up') if isinstance(cfg.get('levels_up'), list) else None
+        if levels is None:
+            levels = [float(x.strip()) for x in args.levels.split(',') if x.strip()]
+        else:
+            levels = [float(x) for x in levels]
     except Exception:
         levels = []
     for lv in levels:
@@ -237,7 +255,10 @@ def main() -> None:
             return
 
     # Breakdown
-    bd = float(args.breakdown)
+    try:
+        bd = float(cfg.get('breakdown')) if cfg.get('breakdown') is not None else float(args.breakdown)
+    except Exception:
+        bd = float(args.breakdown)
     key_bd = f"break_dn_{bd:.2f}"
     if q.price < bd and not fired.get(key_bd):
         msg = (
@@ -250,8 +271,9 @@ def main() -> None:
         fire(key_bd, msg)
         return
 
-    # VWAP cross
-    if vwap and rel in ("above", "below"):
+    # VWAP cross (can be disabled)
+    vwap_cross_enabled = bool(cfg.get('vwap_cross', True))
+    if vwap_cross_enabled and vwap and rel in ("above", "below"):
         if last_rel and last_rel != rel:
             key = f"vwap_cross_{rel}"
             if not fired.get(key):
