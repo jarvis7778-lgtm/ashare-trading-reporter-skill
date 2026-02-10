@@ -1,42 +1,124 @@
 # ashare-trading-reporter-skill
 
-OpenClaw Skill for **A-share (China) intraday reporting + 0-token price alerts**.
+[中文](#中文) | [English](#english)
 
-This repo packages a reusable workflow for **any single stock symbol** (e.g. `sh600158`, `sz000001`):
+---
 
+## 中文
+
+OpenClaw Skill：用于 **A 股（中国股市）盘中两次报告 + 0-token 盘中触发提醒**，可复用到任意个股（只需换 `symbol`）。
+
+支持内容：
+- **交易日午间报告**：11:45（数据截至 11:30）
+- **交易日收盘详报**：15:10
+- （可选）**集合竞价** best-effort 快照（建议 09:26 抓取，用于补强“竞价/开盘”段落）
+- （可选）**盘中触发短提醒**：脚本轮询，只有触发才发消息，设计为 **0 token（不调用大模型）**
+
+> 说明
+> - 数据源使用免费公开接口（Sina + 可选 Eastmoney），best-effort，可能会限流。
+> - 本项目仅用于数据自动化与信息展示，不构成投资建议。
+
+### 下载
+
+去 Releases 下载 `.skill`：
+- v0.1.0：https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.0
+
+需要的文件：
+- `ashare-trading-reporter.skill`
+
+### 安装（OpenClaw）
+
+在 OpenClaw Control UI（或 CLI）里导入/安装 `.skill` 文件。
+
+安装后 skill 名称：
+- `ashare-trading-reporter`
+
+### Skill 内包含哪些文件
+
+- `SKILL.md`：供 Agent 触发与执行的说明
+- `scripts/`
+  - `a_share_intraday_report.py`：生成 11:45/15:10 报告
+  - `a_share_price_alerts.py`：0-token 盘中触发提醒（Telegram/Discord）
+  - `a_share_auction_snapshot.py`：（可选）集合竞价快照
+- `references/`
+  - `data-sources.md`：数据源说明
+
+### 用法概览
+
+#### A) 两次定时报告（11:45 + 15:10）
+
+推荐方式：用 OpenClaw **cron jobs** 在固定时间执行脚本，并把 stdout 原样投递到目标渠道。
+
+常用 schedule（Asia/Shanghai）：
+- 11:45（周一到周五）：`45 11 * * 1-5`
+- 15:10（周一到周五）：`10 15 * * 1-5`
+
+Discord 投递硬规则：
+- 必须用 `channel:<id>`（thread 也是 channel），不要用裸 id。
+
+#### B) 0-token 盘中触发提醒
+
+推荐方式：系统 **crontab** 每分钟跑一次脚本，但脚本只有触发才发消息（不会刷屏，也不吃 token）。
+
+示例（Telegram）：
+
+```cron
+* * * * 1-5 cd /home/lyy/.openclaw/workspace && /usr/bin/python3 scripts/a_share_price_alerts.py \
+  --symbol sh600158 \
+  --channel telegram \
+  --target <telegramChatId> \
+  --state-dir /home/lyy/.openclaw/workspace/data/ashare/alerts \
+  >/dev/null 2>&1
+```
+
+脚本默认触发条件：
+- 触达/突破 10.00
+- 触达/突破 10.03
+- 跌破 9.86
+- 上穿/下穿 VWAP
+
+每个条件每日只提醒一次（本地 state 去重）。
+
+### Roadmap / 想法
+
+- 支持 per-symbol 配置文件（关注价位、触发条件等）
+- 一套 cron 同时监控多个 symbol
+- 更完善的交易日历（节假日）判断
+
+---
+
+## English
+
+OpenClaw Skill for **China A-share intraday reports + 0-token intraday trigger alerts**. Reusable for any stock (just change the `symbol`).
+
+Features:
 - Trading-day **midday report** at **11:45** (data up to 11:30)
 - Trading-day **close report** at **15:10**
-- Optional best-effort **call auction snapshot** (around **09:26**) to enrich the “竞价/开盘” section
-- Optional **0-token intraday trigger alerts** (script polling + send only on trigger)
+- (Optional) best-effort **call auction snapshot** (recommended capture around **09:26**) to enrich the “auction/open” section
+- (Optional) **intraday trigger alerts**: polling script that sends messages **only on triggers**, designed to be **0 token (no LLM calls)**
 
 > Notes
-> - Data sources are free/public (Sina + optional Eastmoney). They are best-effort and may rate-limit.
-> - The intraday trigger alerts are designed to be **0 token** (no LLM calls).
+> - Data sources are free/public (Sina + optional Eastmoney). Best-effort and may rate-limit.
+> - This project is for data automation and information only and does not constitute investment advice.
 
+### Download
 
-## Download
-
-Go to Releases and download the `.skill` file:
-
-- Release v0.1.0: https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.0
+Download the `.skill` file from Releases:
+- v0.1.0: https://github.com/jarvis7778-lgtm/ashare-trading-reporter-skill/releases/tag/v0.1.0
 
 File you want:
 - `ashare-trading-reporter.skill`
 
+### Install (OpenClaw)
 
-## Install (OpenClaw)
+Import/install the `.skill` file in OpenClaw Control UI (or CLI).
 
-In OpenClaw Control UI (or CLI if you prefer), install/import the `.skill` file.
-
-After installation, the skill name is:
+Skill name after install:
 - `ashare-trading-reporter`
 
+### What’s inside
 
-## What’s inside
-
-The skill folder contains:
-
-- `SKILL.md` – the instructions the agent uses
+- `SKILL.md` – instructions for the agent
 - `scripts/`
   - `a_share_intraday_report.py` – generates 11:45 / 15:10 reports
   - `a_share_price_alerts.py` – 0-token trigger alerts (Telegram/Discord)
@@ -44,24 +126,22 @@ The skill folder contains:
 - `references/`
   - `data-sources.md` – endpoints and notes
 
+### Usage overview
 
-## Usage overview
+#### A) Two scheduled reports (11:45 + 15:10)
 
-### A) Two scheduled reports (11:45 + 15:10)
+Recommended: create two OpenClaw **cron jobs** that run the report script and post stdout as-is.
 
-Recommended approach: create two OpenClaw **cron jobs** that run the report script and post the stdout.
-
-Typical schedules (Asia/Shanghai):
+Schedules (Asia/Shanghai):
 - 11:45 (Mon–Fri): `45 11 * * 1-5`
 - 15:10 (Mon–Fri): `10 15 * * 1-5`
 
-Discord delivery reminder:
-- Always use `channel:<id>` (threads are channels). Do **not** use bare ids.
+Discord delivery hard rule:
+- Always use `channel:<id>` for Discord threads/channels. Never use bare ids.
 
+#### B) 0-token intraday trigger alerts
 
-### B) 0-token intraday trigger alerts
-
-Recommended approach: system **crontab** runs the polling script every minute, but it only sends a message when a trigger fires.
+Recommended: system **crontab** runs the polling script every minute, but it sends messages only when a trigger fires.
 
 Example (Telegram):
 
@@ -74,22 +154,22 @@ Example (Telegram):
   >/dev/null 2>&1
 ```
 
-Default triggers in the script:
+Default triggers:
 - touch/above 10.00
 - touch/above 10.03
 - break below 9.86
 - VWAP cross
 
-Each trigger fires at most once per trading day (de-dup by local state file).
+Each trigger fires at most once per trading day (de-dup via a local state file).
 
-
-## Roadmap / ideas
+### Roadmap / ideas
 
 - Per-symbol config file (watch levels, triggers)
 - Multiple symbols monitored by one cron
 - Cleaner trading-calendar detection (holidays)
 
+---
 
 ## Disclaimer
 
-This project is for **data automation and information** only and does **not** constitute investment advice.
+For informational purposes only. Not investment advice.
